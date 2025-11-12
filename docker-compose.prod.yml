@@ -1,5 +1,27 @@
 services:
 
+  # Redis Service
+  ogamex-redis:
+    image: redis:7.2-alpine
+    container_name: ogamex-redis
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ogame-redisdata:/data
+      - ./redis/redis.prod.conf:/usr/local/etc/redis/redis.conf
+    # Redis port is not exposed to the host machine in production
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    networks:
+      app-network:
+        aliases:
+          - ogame-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
   # MariaDB Service
   ogamex-db:
     image: mariadb:11.3.2-jammy
@@ -15,6 +37,12 @@ services:
       MYSQL_ROOT_PASSWORD: toor
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
     networks:
       app-network:
         aliases:
@@ -37,6 +65,13 @@ services:
       CONTAINER_ROLE: app
       SERVICE_NAME: app
       SERVICE_TAGS: dev
+      # Redis Configuration
+      CACHE_DRIVER: redis
+      SESSION_DRIVER: redis
+      REDIS_HOST: ogame-redis
+      REDIS_PORT: 6379
+      # Production optimizations
+      OPCACHE_ENABLE: "1"
     working_dir: /var/www
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9000 || [ $? -eq 56 ]"]
@@ -46,7 +81,10 @@ services:
     networks:
       - app-network
     depends_on:
-      - ogamex-db
+      ogamex-db:
+        condition: service_healthy
+      ogamex-redis:
+        condition: service_healthy
 
   # Nginx Service
   ogamex-webserver:
@@ -125,4 +163,6 @@ networks:
 # Volumes
 volumes:
   ogame-dbdata:
+    driver: local
+  ogame-redisdata:
     driver: local
