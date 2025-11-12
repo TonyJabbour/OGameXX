@@ -42,7 +42,15 @@ use OGame\Http\Controllers\TechtreeController;
 |
 */
 
-Route::redirect('/', '/overview', 301);
+Route::redirect('/', '/landing', 301);
+
+// Modern Landing Page
+Route::get('/landing', [LandingController::class, 'index'])->name('landing');
+
+// Modern Login Page Route
+Route::get('/modern-login', function () {
+    return view('outgame.modern-login');
+})->name('modern-login');
 
 // Group: all logged in pages:
 Route::middleware(['auth', 'globalgame', 'locale'])->group(function () {

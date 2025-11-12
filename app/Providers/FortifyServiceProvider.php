@@ -44,19 +44,11 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Fortify::loginView(function () {
-            return view('outgame.login');
+            return view('outgame.modern-login');
         });
 
-        /*Fortify::registerView(function () {
-            return view('auth.register');
+        Fortify::registerView(function () {
+            return view('outgame.modern-register');
         });
-
-        Fortify::requestPasswordResetLinkView(function () {
-            return view('auth.forgot-password');
-        });
-
-        Fortify::resetPasswordView(function () {
-            return view('auth.reset-password');
-        });*/
     }
 }
